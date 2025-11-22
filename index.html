@@ -7,21 +7,21 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📘</text></svg>">
 <style>
   body { background: #121212; color: #e0e0e0; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; margin: 0; }
-  h2 { color: #64b5f6; }
+  h2 { color: #64b5f6; margin-bottom: 10px; }
   #clock { font-size: 3.5em; font-weight: bold; margin-top: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
   #date { font-size: 1.1em; color: #aaa; margin-bottom: 20px; }
-  #displayArea { width: 90%; max-width: 800px; text-align: center; font-size: 1.5em; line-height: 1.6; margin: 20px 0; padding: 20px; background: #1e1e1e; border-radius: 15px; border: 1px solid #333; min-height: 100px; white-space: pre-wrap; }
+  #displayArea { width: 90%; max-width: 800px; text-align: center; font-size: 1.6em; line-height: 1.6; margin: 10px 0; padding: 20px; background: #1e1e1e; border-radius: 15px; border: 1px solid #333; min-height: 100px; white-space: pre-wrap; display: flex; align-items: center; justify-content: center; flex-direction: column; font-weight: 500;}
   #controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; max-width: 800px; }
   button, input, .setting-group { padding: 10px; border-radius: 8px; border: none; font-size: 14px; }
   button { background: #424242; color: white; cursor: pointer; border: 1px solid #555; }
-  #startBtn { background: #2e7d32; }
+  #startBtn { background: #2e7d32; font-weight: bold;}
   #pushNotificationBtn { background: linear-gradient(135deg, #1565c0, #6a1b9a); color: white; font-weight: bold; }
-  #pushNotificationBtn.active { background: #2e7d32; }
+  #pushNotificationBtn.active { background: #2e7d32; background: linear-gradient(135deg, #2e7d32, #43a047); }
   .setting-group { background: #252525; display: flex; align-items: center; gap: 5px; color: #bbb; }
-  input[type="number"] { background: #333; color: white; border: 1px solid #444; width: 50px; }
-  #bubble { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #0288d1; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 9999; user-select: none; }
+  input[type="number"] { background: #333; color: white; border: 1px solid #444; width: 50px; text-align: center;}
+  #bubble { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #0288d1; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; z-index: 9999; user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
   #scrollSlider { width: 90%; margin-top: 20px; accent-color: #0288d1; }
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(50,50,50,0.9); padding: 12px 24px; border-radius: 30px; opacity: 0; transition: 0.3s; pointer-events: none; border: 1px solid #555; z-index: 10000;}
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(30,30,30,0.95); padding: 12px 24px; border-radius: 30px; opacity: 0; transition: 0.3s; pointer-events: none; border: 1px solid #555; z-index: 10000; font-weight: bold;}
   .toast.show { opacity: 1; }
 </style>
 </head>
@@ -29,8 +29,12 @@
   <div id="clock">00:00</div>
   <div id="date">--/--/----</div>
   <h2 id="appTitle">📘 Học từ vựng TXT</h2>
-  <div id="displayArea">📂 Chọn file .txt để bắt đầu</div>
-  <div id="wordInfo" style="display:none; color:#888">0/0</div>
+  
+  <div id="displayArea">
+    <div style="opacity: 0.7">📂 Chọn file .txt để bắt đầu</div>
+  </div>
+  
+  <div id="wordInfo" style="display:none; color:#888; margin-bottom: 5px;">0/0</div>
   <input type="range" min="0" max="100" value="0" id="scrollSlider" disabled>
 
   <div id="controls">
@@ -38,10 +42,11 @@
     <button id="startBtn">▶️ Bắt đầu</button>
     <button onclick="clearProgress()">🗑️ Reset</button>
     <button id="pushNotificationBtn">🔔 Bật thông báo</button>
-    <div class="setting-group">⏱️ <input type="number" id="timePerGroup" value="3">s</div>
+    <div class="setting-group">⏱️ <input type="number" id="timePerGroup" value="5">s</div>
     <div class="setting-group">📚 <input type="number" id="wordCount" value="5">từ</div>
     <div class="setting-group">🔤 <input type="range" min="1" max="5" value="1.5" step="0.1" id="fontSize"></div>
   </div>
+  
   <div id="bubble">⏸️</div>
   <div id="toast" class="toast">Thông báo</div>
 
@@ -49,54 +54,101 @@
 let words = [], currentIndex = 0, intervalTimer, isRunning = false, pushEnabled = false;
 const els = { clock: document.getElementById('clock'), date: document.getElementById('date'), display: document.getElementById('displayArea'), slider: document.getElementById('scrollSlider'), fileInput: document.getElementById('fileInput'), controls: document.getElementById('controls'), bubble: document.getElementById('bubble'), wordInfo: document.getElementById('wordInfo'), notifBtn: document.getElementById('pushNotificationBtn'), toast: document.getElementById('toast') };
 
+// Đồng hồ
 setInterval(() => { const now = new Date(); els.clock.textContent = now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); els.date.textContent = now.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'long'}); }, 1000);
 
+// Xử lý File
 els.fileInput.addEventListener('change', e => {
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = ev => { words = ev.target.result.split(/[,;\n]+/).map(w=>w.trim()).filter(w=>w); if(words.length){ els.display.innerHTML=`✅ Đã tải <b>${words.length}</b> từ.`; els.slider.disabled=false; els.slider.max=words.length-1; saveState(); showToast(`Đã tải ${words.length} từ`); }};
+  reader.onload = ev => { 
+    words = ev.target.result.split(/[,;\n]+/).map(w=>w.trim()).filter(w=>w); 
+    if(words.length){ 
+        els.display.innerHTML=`✅ Đã tải <b>${words.length}</b> từ.`; 
+        els.slider.disabled=false; 
+        els.slider.max=words.length-1; 
+        saveState(); 
+        showToast(`Đã tải ${words.length} từ`); 
+    }
+  };
   reader.readAsText(file);
 });
 
+// Nút Start / Stop
 document.getElementById('startBtn').addEventListener('click', startLearning);
 els.bubble.addEventListener('click', stopLearning);
 
 function startLearning() {
   if(!words.length) return showToast('⚠️ Chưa có file!');
-  isRunning = true; els.controls.style.display='none'; document.getElementById('appTitle').style.display='none'; els.fileInput.style.display='none'; els.bubble.style.display='flex'; els.wordInfo.style.display='block';
-  const count = parseInt(document.getElementById('wordCount').value)||5, time = (parseInt(document.getElementById('timePerGroup').value)||3)*1000;
+  
+  isRunning = true; 
+  els.controls.style.display='none'; 
+  document.getElementById('appTitle').style.display='none'; 
+  els.fileInput.style.display='none'; 
+  els.bubble.style.display='flex'; 
+  els.wordInfo.style.display='block';
+  
+  const count = parseInt(document.getElementById('wordCount').value)||5;
+  const time = (parseInt(document.getElementById('timePerGroup').value)||5)*1000; // Nên để tối thiểu 5s để thông báo kịp chạy
   
   const show = () => {
     if(currentIndex >= words.length) { stopLearning(); return showToast('🎉 Hoàn thành!'); }
+    
+    // 1. Lấy nhóm từ hiện tại
     const chunk = words.slice(currentIndex, currentIndex+count);
-    els.display.innerText = chunk.map((w,i)=>`${currentIndex+i+1}. ${w}`).join('\n\n'); els.slider.value = currentIndex; els.wordInfo.innerText = `${currentIndex+1}/${words.length}`;
-    if(pushEnabled && currentIndex%(count*2)===0) sendNotification(`Học: ${currentIndex+1}/${words.length}`, chunk.slice(0,2).join(', ')+'...');
-    currentIndex += count; saveState();
+    
+    // 2. Hiển thị lên màn hình
+    els.display.innerText = chunk.map((w,i)=>`${currentIndex+i+1}. ${w}`).join('\n\n'); 
+    els.slider.value = currentIndex; 
+    els.wordInfo.innerText = `${currentIndex+1} - ${Math.min(currentIndex+count, words.length)} / ${words.length}`;
+    
+    // 3. GỬI THÔNG BÁO (CODE MỚI ĐÃ SỬA)
+    // Chỉ gửi nếu người dùng đã bật
+    if(pushEnabled) {
+        // Tạo danh sách từ ngăn cách bằng dấu phẩy
+        const wordList = chunk.join(', '); 
+        const title = `Đang học: ${currentIndex+1} - ${currentIndex+chunk.length}`;
+        sendNotification(title, wordList);
+    }
+    
+    currentIndex += count; 
+    saveState();
   };
-  show(); intervalTimer = setInterval(show, time);
-  if(pushEnabled) sendNotification('🚀 Bắt đầu', 'Giữ màn hình sáng để học tốt nhất!');
+  
+  show(); // Chạy ngay lần đầu
+  intervalTimer = setInterval(show, time);
+  
+  if(pushEnabled) sendNotification('🚀 Bắt đầu', 'Giữ điện thoại sáng để học tốt nhất!');
 }
 
 function stopLearning() {
-  isRunning=false; clearInterval(intervalTimer); els.controls.style.display='flex'; document.getElementById('appTitle').style.display='block'; els.fileInput.style.display='block'; els.bubble.style.display='none'; els.display.innerHTML=`⏸️ <b>Tạm dừng</b><br>Vị trí: ${currentIndex}`; saveState();
+  isRunning=false; clearInterval(intervalTimer); 
+  els.controls.style.display='flex'; 
+  document.getElementById('appTitle').style.display='block'; 
+  els.fileInput.style.display='block'; 
+  els.bubble.style.display='none'; 
+  els.display.innerHTML=`⏸️ <b>Tạm dừng</b><br>Vị trí: ${currentIndex}`; 
+  saveState();
 }
 
+// Slider và Font
 els.slider.addEventListener('input', e => { currentIndex=parseInt(e.target.value); els.wordInfo.innerText=`${currentIndex}/${words.length}`; if(!isRunning) els.display.innerText=`${currentIndex}: ${words[currentIndex]||''}`; });
 document.getElementById('fontSize').addEventListener('input', e => els.display.style.fontSize=e.target.value+'em');
 
-// === PHẦN QUAN TRỌNG: KẾT NỐI SW.JS ===
+// === KẾT NỐI SW.JS VÀ XỬ LÝ THÔNG BÁO ===
 els.notifBtn.addEventListener('click', async () => {
   if (!('serviceWorker' in navigator)) return alert("Trình duyệt không hỗ trợ.");
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return showToast('❌ Cần cấp quyền thông báo');
 
   try {
-    // Đăng ký file sw.js thật
-    await navigator.serviceWorker.register('sw.js'); // <--- ĐÂY LÀ CHỖ ĐÃ SỬA
+    // Đăng ký file sw.js
+    await navigator.serviceWorker.register('sw.js');
     pushEnabled = true;
-    els.notifBtn.innerHTML = "🔔 Đã bật"; els.notifBtn.classList.add('active');
+    els.notifBtn.innerHTML = "🔔 Đã bật (Đang chạy)"; 
+    els.notifBtn.classList.add('active');
     showToast("✅ Đã bật thông báo!");
-    sendNotification("🔔 Test", "Thông báo hoạt động!");
+    sendNotification("🔔 Sẵn sàng", "Từ vựng sẽ hiện ở đây!");
   } catch (err) {
     alert("Lỗi: " + err.message);
   }
@@ -105,17 +157,28 @@ els.notifBtn.addEventListener('click', async () => {
 function sendNotification(title, body) {
   if (!pushEnabled) return;
   const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E";
-  navigator.serviceWorker.ready.then(reg => reg.showNotification(title, { body, icon, tag: 'vocab-app', silent: false }));
+  
+  // tag: 'vocab-app' giúp thông báo mới ghi đè thông báo cũ thay vì spam hàng loạt
+  navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, { 
+          body: body, 
+          icon: icon, 
+          tag: 'vocab-app', 
+          renotify: true, // Rung lại khi có từ mới
+          silent: false 
+      });
+  });
 }
 
+// Tiện ích: Toast, Drag, Lưu trạng thái
 function showToast(msg) { els.toast.textContent=msg; els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),3000); }
 function saveState() { localStorage.setItem('vocabState', JSON.stringify({words, currentIndex, settings:{fontSize:document.getElementById('fontSize').value, count:document.getElementById('wordCount').value, time:document.getElementById('timePerGroup').value}})); }
 function loadState() { const d = JSON.parse(localStorage.getItem('vocabState')); if(d?.words?.length) { words=d.words; currentIndex=d.currentIndex||0; els.slider.max=words.length-1; els.display.innerText=`📂 Khôi phục: ${currentIndex}/${words.length}`; } }
-function clearProgress() { if(confirm("Xóa?")) { localStorage.removeItem('vocabState'); location.reload(); } }
-// Drag bubble logic
+function clearProgress() { if(confirm("Xóa dữ liệu?")) { localStorage.removeItem('vocabState'); location.reload(); } }
+
+// Drag bubble
 let isDragging = false;
 els.bubble.addEventListener('mousedown', e => { isDragging=false; const off={x:e.clientX-els.bubble.getBoundingClientRect().left, y:e.clientY-els.bubble.getBoundingClientRect().top}; const move=ev=>{isDragging=true; els.bubble.style.left=(ev.clientX-off.x)+'px'; els.bubble.style.top=(ev.clientY-off.y)+'px';els.bubble.style.right='auto';els.bubble.style.bottom='auto';}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',()=>{document.removeEventListener('mousemove',move); if(isDragging){const old=els.bubble.onclick; els.bubble.onclick=null; setTimeout(()=>els.bubble.onclick=old,100);}},{once:true}); });
-// Touch support for drag
 els.bubble.addEventListener('touchstart', e => { isDragging=false; const touch=e.touches[0]; const off={x:touch.clientX-els.bubble.getBoundingClientRect().left, y:touch.clientY-els.bubble.getBoundingClientRect().top}; const move=ev=>{isDragging=true; els.bubble.style.left=(ev.touches[0].clientX-off.x)+'px'; els.bubble.style.top=(ev.touches[0].clientY-off.y)+'px';els.bubble.style.right='auto';els.bubble.style.bottom='auto';ev.preventDefault();}; document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',()=>{document.removeEventListener('touchmove',move); if(isDragging){const old=els.bubble.onclick; els.bubble.onclick=null; setTimeout(()=>els.bubble.onclick=old,100);}},{once:true}); });
 
 window.addEventListener('load', loadState);
