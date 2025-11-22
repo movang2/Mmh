@@ -242,7 +242,7 @@ function clearProgress() {
 let isDragging = false;
 const dragLogic = (e) => {
     isDragging = false; 
-    e.preventDefault();
+    // e.preventDefault(); // Loại bỏ preventDefault ban đầu để không ngăn cuộn trang ngay lập tức
     const isTouch = e.type.startsWith('touch');
     const client = isTouch ? e.touches[0] : e;
     
@@ -258,17 +258,20 @@ const dragLogic = (e) => {
         els.bubble.style.top = (currentClient.clientY - off.y) + 'px';
         els.bubble.style.right = 'auto'; 
         els.bubble.style.bottom = 'auto';
-        if (isTouch) ev.preventDefault();
+        if (isTouch) ev.preventDefault(); // Ngăn cuộn khi đang kéo
     };
 
     const end = () => {
         const eventType = isTouch ? 'touchmove' : 'mousemove';
         document.removeEventListener(eventType, move);
-        if(isDragging){
-            // Tắt click tạm thời khi kéo
-            const oldClick = els.bubble.onclick;
-            els.bubble.onclick = null;
-            setTimeout(() => els.bubble.onclick = oldClick, 100);
+        
+        // ✨ SỬA LỖI: Tắt/Bật pointer-events để chặn click khi đang kéo
+        if (isDragging) {
+            els.bubble.style.pointerEvents = "none";
+            // Đặt độ trễ ngắn để click hoạt động trở lại sau khi kéo kết thúc
+            setTimeout(() => {
+                els.bubble.style.pointerEvents = "auto";
+            }, 50); 
         }
     };
     
