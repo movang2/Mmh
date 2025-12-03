@@ -13,17 +13,70 @@
   #date { font-size: 1.1em; color: #aaa; margin-bottom: 20px; }
   #displayArea { width: 90%; max-width: 800px; text-align: center; font-size: 1.6em; line-height: 1.6; margin: 10px 0; padding: 20px; background: #1e1e1e; border-radius: 15px; border: 1px solid #333; min-height: 100px; white-space: pre-wrap; display: flex; align-items: center; justify-content: center; flex-direction: column; font-weight: 500;}
   #controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; max-width: 800px; }
-  button, input, .setting-group { padding: 10px; border-radius: 8px; border: none; font-size: 14px; }
+  button, input, .setting-group, textarea { padding: 10px; border-radius: 8px; border: none; font-size: 14px; }
   button { background: #424242; color: white; cursor: pointer; border: 1px solid #555; }
   #startBtn { background: #2e7d32; font-weight: bold;}
   #pushNotificationBtn { background: linear-gradient(135deg, #1565c0, #6a1b9a); color: white; font-weight: bold; }
   #pushNotificationBtn.active { background: linear-gradient(135deg, #2e7d32, #43a047); }
   .setting-group { background: #252525; display: flex; align-items: center; gap: 5px; color: #bbb; }
   input[type="number"] { background: #333; color: white; border: 1px solid #444; width: 50px; text-align: center;}
+  textarea { 
+    background: #252525; 
+    color: white; 
+    border: 1px solid #444; 
+    width: 100%; 
+    max-width: 800px; 
+    min-height: 100px; 
+    margin-top: 10px; 
+    font-family: monospace;
+  }
   #bubble { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #0288d1; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; z-index: 9999; user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
   #scrollSlider { width: 90%; margin-top: 20px; accent-color: #0288d1; }
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(30,30,30,0.95); padding: 12px 24px; border-radius: 30px; opacity: 0; transition: 0.3s; pointer-events: none; border: 1px solid #555; z-index: 10000; font-weight: bold;}
   .toast.show { opacity: 1; }
+  .tab-container { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 15px; 
+    width: 90%; 
+    max-width: 800px; 
+  }
+  .tab-button { 
+    flex: 1; 
+    padding: 12px; 
+    background: #252525; 
+    border: 1px solid #444; 
+    color: #bbb; 
+    cursor: pointer; 
+    text-align: center; 
+    border-radius: 8px; 
+    transition: all 0.3s;
+  }
+  .tab-button.active { 
+    background: #0288d1; 
+    color: white; 
+    border-color: #0288d1;
+  }
+  .tab-content { 
+    display: none; 
+    width: 90%; 
+    max-width: 800px; 
+  }
+  .tab-content.active { 
+    display: block; 
+  }
+  #pasteArea { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+  #themeVocabulary { 
+    background: #1e1e1e; 
+    padding: 15px; 
+    border-radius: 8px; 
+    border: 1px solid #333; 
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-height: 150px;
+    overflow-y: auto;
+  }
 </style>
 </head>
 <body>
@@ -31,21 +84,75 @@
   <div id="date">--/--/----</div>
   <h2 id="appTitle">📘 Học từ vựng TXT</h2>
   
-  <div id="displayArea">
-    <div style="opacity: 0.7">📂 Chọn file .txt để bắt đầu</div>
+  <!-- Tab chuyển đổi -->
+  <div class="tab-container">
+    <button class="tab-button active" onclick="switchTab('fileTab')">📁 Từ File</button>
+    <button class="tab-button" onclick="switchTab('pasteTab')">📝 Nhập Trực Tiếp</button>
   </div>
   
-  <div id="wordInfo" style="display:none; color:#888; margin-bottom: 5px;">0/0</div>
-  <input type="range" min="0" max="100" value="0" id="scrollSlider" disabled>
+  <!-- Tab chọn file -->
+  <div id="fileTab" class="tab-content active">
+    <div id="displayArea">
+      <div style="opacity: 0.7">📂 Chọn file .txt để bắt đầu</div>
+    </div>
+    
+    <div id="wordInfo" style="display:none; color:#888; margin-bottom: 5px;">0/0</div>
+    <input type="range" min="0" max="100" value="0" id="scrollSlider" disabled>
 
-  <div id="controls">
-    <input type="file" id="fileInput" accept=".txt">
-    <button id="startBtn">▶️ Bắt đầu</button>
-    <button onclick="clearProgress()">🗑️ Reset</button>
-    <button id="pushNotificationBtn">🔔 Bật thông báo</button>
-    <div class="setting-group">⏱️ <input type="number" id="timePerGroup" value="5">s</div>
-    <div class="setting-group">📚 <input type="number" id="wordCount" value="5">từ</div>
-    <div class="setting-group">🔤 <input type="range" min="1" max="5" value="1.5" step="0.1" id="fontSize"></div>
+    <div id="controls">
+      <input type="file" id="fileInput" accept=".txt">
+      <button id="startBtn">▶️ Bắt đầu</button>
+      <button onclick="clearProgress()">🗑️ Reset</button>
+      <button id="pushNotificationBtn">🔔 Bật thông báo</button>
+      <div class="setting-group">⏱️ <input type="number" id="timePerGroup" value="5">s</div>
+      <div class="setting-group">📚 <input type="number" id="wordCount" value="5">từ</div>
+      <div class="setting-group">🔤 <input type="range" min="1" max="5" value="1.5" step="0.1" id="fontSize"></div>
+    </div>
+  </div>
+  
+  <!-- Tab nhập trực tiếp -->
+  <div id="pasteTab" class="tab-content">
+    <div id="pasteArea">
+      <textarea id="vocabInput" placeholder="Dán từ vựng của bạn vào đây (mỗi từ một dòng hoặc cách nhau bằng dấu phẩy)..."></textarea>
+      <button onclick="loadFromTextarea()" style="background: #0288d1; font-weight: bold;">📥 Tải từ vựng từ ô nhập</button>
+      
+      <div style="margin-top: 20px;">
+        <h3 style="color: #64b5f6; margin-bottom: 10px;">📌 Từ vựng mẫu - Chủ đề Sửa chữa (Tiếng Hàn)</h3>
+        <div id="themeVocabulary">
+수리하다 (suri-hada) - Sửa chữa<br>
+고치다 (gochi-da) - Sửa, chữa<br>
+교체하다 (gyoche-hada) - Thay thế<br>
+점검하다 (jeomgeom-hada) - Kiểm tra<br>
+조립하다 (jorip-hada) - Lắp ráp<br>
+분해하다 (bunhae-hada) - Tháo rời<br>
+청소하다 (cheongso-hada) - Vệ sinh<br>
+조정하다 (jojeong-hada) - Điều chỉnh<br>
+설치하다 (seolchi-hada) - Cài đặt, lắp đặt<br>
+보수하다 (bosu-hada) - Bảo trì<br>
+수선하다 (suseon-hada) - Sửa chữa (quần áo)<br>
+도색하다 (dosaek-hada) - Sơn<br>
+용접하다 (yongjeop-hada) - Hàn<br>
+연마하다 (yeonma-hada) - Mài<br>
+드릴 (deuril) - Máy khoan<br>
+망치 (mangchi) - Búa<br>
+렌치 (renchi) - Cờ lê<br>
+스패너 (seupaeneo) - Mỏ lết<br>
+드라이버 (deuraibeo) - Tua vít<br>
+톱 (top) - Cưa
+        </div>
+        <button onclick="loadSampleVocabulary()" style="background: #6a1b9a; margin-top: 10px;">📋 Sử dụng từ vựng mẫu</button>
+      </div>
+    </div>
+    
+    <div id="pasteWordInfo" style="display:none; color:#888; margin-bottom: 5px; margin-top: 10px;">0/0</div>
+    <input type="range" min="0" max="100" value="0" id="pasteScrollSlider" disabled style="width: 90%; margin-top: 10px; accent-color: #0288d1;">
+    
+    <div id="pasteControls" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; max-width: 800px; margin-top: 15px;">
+      <button id="pasteStartBtn" style="background: #2e7d32; font-weight: bold;">▶️ Bắt đầu học từ nhập</button>
+      <button onclick="clearPasteProgress()">🗑️ Reset từ nhập</button>
+      <div class="setting-group">⏱️ <input type="number" id="pasteTimePerGroup" value="5">s</div>
+      <div class="setting-group">📚 <input type="number" id="pasteWordCount" value="5">từ</div>
+    </div>
   </div>
   
   <div id="bubble">⏸️</div>
@@ -54,12 +161,19 @@
 <script>
 // ========== KHAI BÁO BIẾN ==========
 let words = [], currentIndex = 0, intervalTimer, isRunning = false, pushEnabled = false;
+let pasteWords = [], pasteCurrentIndex = 0, pasteIntervalTimer, isPasteRunning = false;
+let currentTab = 'fileTab';
+
 const els = { 
     clock: document.getElementById('clock'), date: document.getElementById('date'), 
     display: document.getElementById('displayArea'), slider: document.getElementById('scrollSlider'), 
     fileInput: document.getElementById('fileInput'), controls: document.getElementById('controls'), 
     bubble: document.getElementById('bubble'), wordInfo: document.getElementById('wordInfo'), 
-    notifBtn: document.getElementById('pushNotificationBtn'), toast: document.getElementById('toast') 
+    notifBtn: document.getElementById('pushNotificationBtn'), toast: document.getElementById('toast'),
+    vocabInput: document.getElementById('vocabInput'),
+    pasteWordInfo: document.getElementById('pasteWordInfo'),
+    pasteSlider: document.getElementById('pasteScrollSlider'),
+    pasteControls: document.getElementById('pasteControls')
 };
 
 // ========== LOGIC ĐỒNG HỒ ==========
@@ -68,6 +182,32 @@ setInterval(() => {
     els.clock.textContent = now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); 
     els.date.textContent = now.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'long'}); 
 }, 1000);
+
+// ========== CHUYỂN TAB ==========
+function switchTab(tabName) {
+    currentTab = tabName;
+    
+    // Cập nhật tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Cập nhật tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(tabName).classList.add('active');
+    
+    // Hiển thị dữ liệu tương ứng
+    if (tabName === 'fileTab' && words.length > 0) {
+        els.display.innerHTML = `✅ Đã tải <b>${words.length}</b> từ. Vui lòng nhấn BẮT ĐẦU.`;
+        els.slider.disabled = false;
+        els.slider.max = words.length - 1;
+    } else if (tabName === 'pasteTab' && pasteWords.length > 0) {
+        els.vocabInput.value = pasteWords.join('\n');
+    }
+}
 
 // ========== XỬ LÝ FILE TXT ==========
 els.fileInput.addEventListener('change', e => {
@@ -86,11 +226,57 @@ els.fileInput.addEventListener('change', e => {
   reader.readAsText(file);
 });
 
-// ========== BẮT ĐẦU/DỪNG HỌC ==========
+// ========== XỬ LÝ NHẬP TRỰC TIẾP ==========
+function loadFromTextarea() {
+    const text = els.vocabInput.value.trim();
+    if (!text) {
+        showToast('⚠️ Vui lòng nhập từ vựng!');
+        return;
+    }
+    
+    pasteWords = text.split(/[,;\n]+/).map(w=>w.trim()).filter(w=>w);
+    if (pasteWords.length) {
+        showToast(`✅ Đã tải ${pasteWords.length} từ từ ô nhập`);
+        els.pasteSlider.disabled = false;
+        els.pasteSlider.max = pasteWords.length - 1;
+        els.pasteWordInfo.style.display = 'block';
+        els.pasteWordInfo.innerText = `0/${pasteWords.length}`;
+        savePasteState();
+    }
+}
+
+function loadSampleVocabulary() {
+    const sampleText = `수리하다 (suri-hada) - Sửa chữa
+고치다 (gochi-da) - Sửa, chữa
+교체하다 (gyoche-hada) - Thay thế
+점검하다 (jeomgeom-hada) - Kiểm tra
+조립하다 (jorip-hada) - Lắp ráp
+분해하다 (bunhae-hada) - Tháo rời
+청소하다 (cheongso-hada) - Vệ sinh
+조정하다 (jojeong-hada) - Điều chỉnh
+설치하다 (seolchi-hada) - Cài đặt, lắp đặt
+보수하다 (bosu-hada) - Bảo trì
+수선하다 (suseon-hada) - Sửa chữa (quần áo)
+도색하다 (dosaek-hada) - Sơn
+용접하다 (yongjeop-hada) - Hàn
+연마하다 (yeonma-hada) - Mài
+드릴 (deuril) - Máy khoан
+망치 (mangchi) - Búa
+렌치 (renchi) - Cờ lê
+스패너 (seupaeneo) - Mỏ lết
+드라이버 (deuraibeo) - Tua vít
+톱 (top) - Cưa`;
+    
+    els.vocabInput.value = sampleText;
+    loadFromTextarea();
+}
+
+// ========== BẮT ĐẦU/DỪNG HỌC (FILE) ==========
 document.getElementById('startBtn').addEventListener('click', startLearning);
 els.bubble.addEventListener('click', stopLearning);
 
 function startLearning() {
+  if(currentTab !== 'fileTab') return;
   if(!words.length) return showToast('⚠️ Chưa có file!');
   
   isRunning = true; 
@@ -101,25 +287,20 @@ function startLearning() {
   els.wordInfo.style.display='block';
   
   const count = parseInt(document.getElementById('wordCount').value)||5;
-  // Lấy giá trị từ input, mặc định 5s
   const time = (parseInt(document.getElementById('timePerGroup').value)||5)*1000; 
   
   const show = () => {
     if(currentIndex >= words.length) { stopLearning(); return showToast('🎉 Hoàn thành!'); }
     
-    // 1. Lấy nhóm từ hiện tại
     const chunk = words.slice(currentIndex, currentIndex+count);
     
-    // 2. Hiển thị lên màn hình web
     els.display.innerText = chunk.map((w,i)=>`${currentIndex+i+1}. ${w}`).join('\n\n'); 
     els.slider.value = currentIndex; 
     els.wordInfo.innerText = `${currentIndex+1} - ${Math.min(currentIndex+count, words.length)} / ${words.length}`;
     
-    // 3. GỬI THÔNG BÁO (ĐÃ SỬA VÀ TỐI ƯU HƠN)
     if(pushEnabled) {
-        // Dùng \n và • để hiển thị thành danh sách khi thông báo được mở rộng
         const wordList = chunk.map(w => "• " + w).join('\n'); 
-        const title = `📖 Học: ${currentIndex+1} - ${currentIndex + chunk.length} / ${words.length}`;
+        const title = `📖 Học (File): ${currentIndex+1} - ${currentIndex + chunk.length} / ${words.length}`;
         sendNotification(title, wordList);
     }
     
@@ -130,17 +311,77 @@ function startLearning() {
   show(); 
   intervalTimer = setInterval(show, time);
   
-  if(pushEnabled) sendNotification('🚀 Bắt đầu', 'Từ vựng sẽ hiện trên thông báo!');
+  if(pushEnabled) sendNotification('🚀 Bắt đầu học từ file', 'Từ vựng sẽ hiện trên thông báo!');
 }
 
 function stopLearning() {
-  isRunning=false; clearInterval(intervalTimer); 
+  if(isRunning) {
+    isRunning=false; clearInterval(intervalTimer); 
+  }
+  if(isPasteRunning) {
+    isPasteRunning=false; clearInterval(pasteIntervalTimer);
+  }
+  
   els.controls.style.display='flex'; 
   document.getElementById('appTitle').style.display='block'; 
   els.fileInput.style.display='block'; 
   els.bubble.style.display='none'; 
-  els.display.innerHTML=`⏸️ <b>Tạm dừng</b><br>Tiếp tục từ vị trí: ${currentIndex}`; 
-  saveState();
+  
+  if(currentTab === 'fileTab') {
+    els.display.innerHTML=`⏸️ <b>Tạm dừng</b><br>Tiếp tục từ vị trí: ${currentIndex}`; 
+    saveState();
+  } else if(currentTab === 'pasteTab') {
+    els.display.innerHTML=`⏸️ <b>Tạm dừng</b><br>Tiếp tục từ vị trí: ${pasteCurrentIndex}`; 
+    savePasteState();
+  }
+}
+
+// ========== BẮT ĐẦU/DỪNG HỌC (NHẬP TRỰC TIẾP) ==========
+document.getElementById('pasteStartBtn').addEventListener('click', startPasteLearning);
+
+function startPasteLearning() {
+  if(currentTab !== 'pasteTab') return;
+  if(!pasteWords.length) return showToast('⚠️ Chưa có từ vựng! Vui lòng tải từ ô nhập.');
+  
+  isPasteRunning = true; 
+  els.pasteControls.style.display='none'; 
+  document.getElementById('appTitle').style.display='none'; 
+  els.bubble.style.display='flex'; 
+  els.pasteWordInfo.style.display='block';
+  
+  const count = parseInt(document.getElementById('pasteWordCount').value)||5;
+  const time = (parseInt(document.getElementById('pasteTimePerGroup').value)||5)*1000; 
+  
+  const show = () => {
+    if(pasteCurrentIndex >= pasteWords.length) { 
+      isPasteRunning = false;
+      clearInterval(pasteIntervalTimer);
+      els.pasteControls.style.display='flex'; 
+      document.getElementById('appTitle').style.display='block'; 
+      els.bubble.style.display='none'; 
+      return showToast('🎉 Hoàn thành từ nhập!'); 
+    }
+    
+    const chunk = pasteWords.slice(pasteCurrentIndex, pasteCurrentIndex+count);
+    
+    els.display.innerText = chunk.map((w,i)=>`${pasteCurrentIndex+i+1}. ${w}`).join('\n\n'); 
+    els.pasteSlider.value = pasteCurrentIndex; 
+    els.pasteWordInfo.innerText = `${pasteCurrentIndex+1} - ${Math.min(pasteCurrentIndex+count, pasteWords.length)} / ${pasteWords.length}`;
+    
+    if(pushEnabled) {
+        const wordList = chunk.map(w => "• " + w).join('\n'); 
+        const title = `📖 Học (Nhập): ${pasteCurrentIndex+1} - ${pasteCurrentIndex + chunk.length} / ${pasteWords.length}`;
+        sendNotification(title, wordList);
+    }
+    
+    pasteCurrentIndex += count; 
+    savePasteState();
+  };
+  
+  show(); 
+  pasteIntervalTimer = setInterval(show, time);
+  
+  if(pushEnabled) sendNotification('🚀 Bắt đầu học từ nhập', 'Từ vựng sẽ hiện trên thông báo!');
 }
 
 // ========== CÀI ĐẶT VÀ TRẠNG THÁI ==========
@@ -151,6 +392,13 @@ els.slider.addEventListener('input', e => {
     saveState();
 });
 
+els.pasteSlider.addEventListener('input', e => { 
+    pasteCurrentIndex=parseInt(e.target.value); 
+    els.pasteWordInfo.innerText=`${pasteCurrentIndex}/${pasteWords.length}`; 
+    if(!isPasteRunning) els.display.innerText=`${pasteCurrentIndex}: ${pasteWords[pasteCurrentIndex]||''}`; 
+    savePasteState();
+});
+
 document.getElementById('fontSize').addEventListener('input', e => {
     els.display.style.fontSize=e.target.value+'em'; 
     saveState();
@@ -158,6 +406,8 @@ document.getElementById('fontSize').addEventListener('input', e => {
 
 document.getElementById('wordCount').addEventListener('input', saveState);
 document.getElementById('timePerGroup').addEventListener('input', saveState);
+document.getElementById('pasteWordCount').addEventListener('input', savePasteState);
+document.getElementById('pasteTimePerGroup').addEventListener('input', savePasteState);
 
 // ========== LOGIC PUSH NOTIFICATION ==========
 els.notifBtn.addEventListener('click', async () => {
@@ -166,7 +416,6 @@ els.notifBtn.addEventListener('click', async () => {
   if (permission !== 'granted') return showToast('❌ Cần cấp quyền thông báo');
 
   try {
-    // Đăng ký file sw.js
     await navigator.serviceWorker.register('sw.js');
     pushEnabled = true;
     els.notifBtn.innerHTML = "🔔 Đã bật (Đang chạy)"; 
@@ -186,8 +435,8 @@ function sendNotification(title, body) {
       reg.showNotification(title, { 
           body: body, 
           icon: icon, 
-          tag: 'vocab-app', // Ghi đè thông báo cũ
-          renotify: true, // Rung lại khi có từ mới
+          tag: 'vocab-app',
+          renotify: true,
           vibrate: [100, 50, 100],
           silent: false 
       });
@@ -212,6 +461,17 @@ function saveState() {
     })); 
 }
 
+function savePasteState() {
+    localStorage.setItem('vocabPasteState', JSON.stringify({
+        pasteWords, pasteCurrentIndex,
+        settings: {
+            count: document.getElementById('pasteWordCount').value,
+            time: document.getElementById('pasteTimePerGroup').value
+        },
+        inputText: els.vocabInput.value
+    }));
+}
+
 function loadState() { 
     const raw = localStorage.getItem('vocabState');
     if(raw) {
@@ -231,18 +491,49 @@ function loadState() {
     }
 }
 
+function loadPasteState() {
+    const raw = localStorage.getItem('vocabPasteState');
+    if(raw) {
+        const d = JSON.parse(raw);
+        if(d?.pasteWords?.length) {
+            pasteWords = d.pasteWords;
+            pasteCurrentIndex = d.pasteCurrentIndex || 0;
+            els.pasteSlider.max = pasteWords.length - 1;
+            els.pasteSlider.disabled = false;
+            els.vocabInput.value = d.inputText || pasteWords.join('\n');
+            els.pasteWordInfo.style.display = 'block';
+            els.pasteWordInfo.innerText = `${pasteCurrentIndex}/${pasteWords.length}`;
+        }
+        if (d?.settings) {
+            document.getElementById('pasteWordCount').value = d.settings.count || 5;
+            document.getElementById('pasteTimePerGroup').value = d.settings.time || 5;
+        }
+    }
+}
+
 function clearProgress() { 
-    if(confirm("Xóa toàn bộ dữ liệu học và cài đặt?")) { 
+    if(confirm("Xóa toàn bộ dữ liệu học và cài đặt từ file?")) { 
         localStorage.removeItem('vocabState'); 
         location.reload(); 
     } 
+}
+
+function clearPasteProgress() {
+    if(confirm("Xóa toàn bộ dữ liệu học từ ô nhập?")) {
+        localStorage.removeItem('vocabPasteState');
+        pasteWords = [];
+        pasteCurrentIndex = 0;
+        els.vocabInput.value = '';
+        els.pasteSlider.disabled = true;
+        els.pasteWordInfo.style.display = 'none';
+        showToast('Đã xóa dữ liệu nhập');
+    }
 }
 
 // Drag bubble (mousedown for desktop, touchstart for mobile)
 let isDragging = false;
 const dragLogic = (e) => {
     isDragging = false; 
-    // e.preventDefault(); // Loại bỏ preventDefault ban đầu để không ngăn cuộn trang ngay lập tức
     const isTouch = e.type.startsWith('touch');
     const client = isTouch ? e.touches[0] : e;
     
@@ -258,17 +549,15 @@ const dragLogic = (e) => {
         els.bubble.style.top = (currentClient.clientY - off.y) + 'px';
         els.bubble.style.right = 'auto'; 
         els.bubble.style.bottom = 'auto';
-        if (isTouch) ev.preventDefault(); // Ngăn cuộn khi đang kéo
+        if (isTouch) ev.preventDefault();
     };
 
     const end = () => {
         const eventType = isTouch ? 'touchmove' : 'mousemove';
         document.removeEventListener(eventType, move);
         
-        // ✨ SỬA LỖI: Tắt/Bật pointer-events để chặn click khi đang kéo
         if (isDragging) {
             els.bubble.style.pointerEvents = "none";
-            // Đặt độ trễ ngắn để click hoạt động trở lại sau khi kéo kết thúc
             setTimeout(() => {
                 els.bubble.style.pointerEvents = "auto";
             }, 50); 
@@ -283,11 +572,10 @@ const dragLogic = (e) => {
 els.bubble.addEventListener('mousedown', dragLogic);
 els.bubble.addEventListener('touchstart', dragLogic);
 
-
 // ========== KHỞI TẠO ==========
 window.addEventListener('load', () => {
     loadState();
-    // Tự động scroll nhẹ để ẩn thanh địa chỉ trên mobile
+    loadPasteState();
     setTimeout(() => window.scrollTo(0, 1), 100);
 });
 </script>
